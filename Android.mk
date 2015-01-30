@@ -361,6 +361,9 @@ endif
 LOCAL_CFLAGS += -DPLATFORM_SDK_VERSION=$(PLATFORM_SDK_VERSION)
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -gt 22; echo $$?),0)
     LOCAL_CFLAGS += -DTW_USE_NEW_MINADBD
+
+ifneq ($(TARGET_RECOVERY_INITRC),)
+    TW_EXCLUDE_DEFAULT_USB_INIT := true
 endif
 
 LOCAL_ADDITIONAL_DEPENDENCIES := \
@@ -436,6 +439,9 @@ ifeq ($(BOARD_USES_BML_OVER_MTD),true)
 endif
 ifeq ($(TW_INCLUDE_INJECTTWRP), true)
     LOCAL_ADDITIONAL_DEPENDENCIES += injecttwrp
+endif
+ifneq ($(TW_EXCLUDE_DEFAULT_USB_INIT), true)
+    LOCAL_ADDITIONAL_DEPENDENCIES += init.recovery.usb.rc
 endif
 # Allow devices to specify device-specific recovery dependencies
 ifneq ($(TARGET_RECOVERY_DEVICE_MODULES),)
@@ -584,6 +590,7 @@ include $(commands_recovery_local_path)/injecttwrp/Android.mk \
     $(commands_recovery_local_path)/etc/Android.mk \
     $(commands_recovery_local_path)/toybox/Android.mk \
     $(commands_recovery_local_path)/libpixelflinger/Android.mk
+
 
 ifeq ($(TW_INCLUDE_CRYPTO), true)
     include $(commands_recovery_local_path)/crypto/lollipop/Android.mk
