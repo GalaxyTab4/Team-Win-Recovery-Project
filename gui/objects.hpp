@@ -673,6 +673,7 @@ protected:
 		std::string displayName;
 		std::string variableValue;
 		unsigned int selected;
+		GUIAction* action;
 	};
 
 protected:
