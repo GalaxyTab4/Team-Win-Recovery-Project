@@ -1,17 +1,13 @@
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
-LOCAL_SRC_FILES := graphics_overlay.c events.c resources.c
-ifneq ($(BOARD_CUSTOM_GRAPHICS),)
-  LOCAL_SRC_FILES += $(BOARD_CUSTOM_GRAPHICS)
-else
-  LOCAL_SRC_FILES += graphics.c
-endif
-
-LOCAL_C_INCLUDES +=\
-    external/libpng \
-    external/zlib \
-    system/core/include/pixelflinger
+LOCAL_SRC_FILES := \
+    events.cpp \
+    graphics.cpp \
+    graphics_adf.cpp \
+    graphics_drm.cpp \
+    graphics_fbdev.cpp \
+    resources.cpp \
 
 ifeq ($(TW_TARGET_USES_QCOM_BSP), true)
   LOCAL_CFLAGS += -DMSM_BSP
@@ -33,14 +29,21 @@ ifeq ($(TW_NEW_ION_HEAP), true)
   LOCAL_CFLAGS += -DNEW_ION_HEAP
 endif
 
-LOCAL_STATIC_LIBRARY := libpng
-LOCAL_WHOLE_STATIC_LIBRARIES := libpixelflinger_static
+LOCAL_WHOLE_STATIC_LIBRARIES += libadf
+LOCAL_WHOLE_STATIC_LIBRARIES += libdrm
+LOCAL_STATIC_LIBRARIES += libpng
+
 LOCAL_MODULE := libminui
+
+LOCAL_CLANG := true
 
 # This used to compare against values in double-quotes (which are just
 # ordinary characters in this context).  Strip double-quotes from the
 # value so that either will work.
 
+ifeq ($(subst ",,$(TARGET_RECOVERY_PIXEL_FORMAT)),ABGR_8888)
+  LOCAL_CFLAGS += -DRECOVERY_ABGR
+endif
 ifeq ($(subst ",,$(TARGET_RECOVERY_PIXEL_FORMAT)),RGBX_8888)
   LOCAL_CFLAGS += -DRECOVERY_RGBX
 endif
@@ -68,35 +71,8 @@ endif
 
 include $(BUILD_STATIC_LIBRARY)
 
+# Used by OEMs for factory test images.
 include $(CLEAR_VARS)
-
-LOCAL_SRC_FILES := graphics_overlay.c events.c resources.c
-ifneq ($(BOARD_CUSTOM_GRAPHICS),)
-  LOCAL_SRC_FILES += $(BOARD_CUSTOM_GRAPHICS)
-else
-  LOCAL_SRC_FILES += graphics.c
-endif
-
-ifeq ($(TW_TARGET_USES_QCOM_BSP), true)
-  LOCAL_CFLAGS += -DMSM_BSP
-  ifeq ($(TARGET_PREBUILT_KERNEL),)
-    LOCAL_ADDITIONAL_DEPENDENCIES := $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr
-    LOCAL_C_INCLUDES += $(TARGET_OUT_INTERMEDIATES)/KERNEL_OBJ/usr/include
-  else
-    ifeq ($(TARGET_CUSTOM_KERNEL_HEADERS),)
-      LOCAL_C_INCLUDES += $(commands_recovery_local_path)/minui/include
-    else
-      LOCAL_C_INCLUDES += $(TARGET_CUSTOM_KERNEL_HEADERS)
-    endif
-  endif
-else
-  LOCAL_C_INCLUDES += $(commands_recovery_local_path)/minui/include
-endif
-
-LOCAL_C_INCLUDES +=\
-    external/libpng\
-    external/zlib
-
 LOCAL_MODULE := libminui
 
 LOCAL_ARM_MODE:= arm
@@ -131,5 +107,8 @@ ifneq ($(TW_NO_SCREEN_BLANK),)
 endif
 
 LOCAL_CFLAGS += -DFASTMMI_FEATURE
+
+LOCAL_WHOLE_STATIC_LIBRARIES += libminui
+LOCAL_SHARED_LIBRARIES := libpng
 
 include $(BUILD_SHARED_LIBRARY)
