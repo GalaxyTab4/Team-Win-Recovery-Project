@@ -165,7 +165,7 @@ ifneq ($(TW_THEME_LANDSCAPE),)
 endif
 
 LOCAL_SHARED_LIBRARIES += libz libc libcutils libjpeg libpng libutils
-LOCAL_STATIC_LIBRARIES += libpixelflinger_static
+LOCAL_STATIC_LIBRARIES += libpixelflinger_twrp
 LOCAL_MODULE_TAGS := eng
 LOCAL_MODULE := libminuitwrp
 
