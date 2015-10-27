@@ -55,6 +55,8 @@ PageSet* PageManager::mCurrentSet;
 PageSet* PageManager::mBaseSet = NULL;
 MouseCursor *PageManager::mMouseCursor = NULL;
 HardwareKeyboard *PageManager::mHardwareKeyboard = NULL;
+bool PageManager::mReloadTheme = false;
+std::string PageManager::mStartPage = "main";
 
 int tw_x_offset = 0;
 int tw_y_offset = 0;
@@ -654,15 +656,12 @@ int Page::NotifyVarChange(std::string varName, std::string value)
 	return 0;
 }
 
-PageSet::PageSet(char* xmlFile)
+PageSet::PageSet(const char* xmlFile)
 {
 	mResources = new ResourceManager;
 	mCurrentPage = NULL;
 
-	mXmlFile = xmlFile;
-	if (xmlFile)
-		mDoc.parse<0>(mXmlFile);
-	else
+	if (!xmlFile)
 		mCurrentPage = new Page(NULL, NULL);
 }
 
@@ -673,23 +672,17 @@ PageSet::~PageSet()
 		delete *itr;
 
 	delete mResources;
-	free(mXmlFile);
-
-	mDoc.clear();
-
-	for (std::vector<xml_document<>*>::iterator itr = mIncludedDocs.begin(); itr != mIncludedDocs.end(); ++itr) {
-		(*itr)->clear();
-		delete *itr;
-	}
 }
 
-int PageSet::Load(ZipArchive* package)
+int PageSet::Load(ZipArchive* package, char* xmlFile)
 {
+	xml_document<> mDoc;
 	xml_node<>* parent;
 	xml_node<>* child;
 	xml_node<>* xmltemplate;
 	xml_node<>* xmlstyle;
 
+	mDoc.parse<0>(xmlFile);
 	parent = mDoc.first_node("recovery");
 	if (!parent)
 		parent = mDoc.first_node("install");
@@ -776,11 +769,15 @@ int PageSet::Load(ZipArchive* package)
 	if (child) {
 		if (LoadPages(child)) {
 			LOGERR("PageSet::Load returning -1\n");
+			mDoc.clear();
 			return -1;
 		}
 	}
 
-	return CheckInclude(package, &mDoc);
+	int ret = CheckInclude(package, &mDoc);
+	mDoc.clear();
+	templates.clear();
+	return ret;
 }
 
 int PageSet::CheckInclude(ZipArchive* package, xml_document<> *parentDoc)
@@ -875,17 +872,19 @@ int PageSet::CheckInclude(ZipArchive* package, xml_document<> *parentDoc)
 			return -1;
 		}
 
-		mIncludedDocs.push_back(doc);
-
 		if (CheckInclude(package, doc)) {
+			doc->clear();
+			delete doc;
 			free(xmlFile);
 			return -1;
 		}
+		doc->clear();
+		delete doc;
+		free(xmlFile);
 
 		chld = chld->next_sibling("xmlfile");
 	}
-	if (xmlFile)
-		free(xmlFile);
+
 	return 0;
 }
 
@@ -1205,6 +1204,9 @@ int PageManager::LoadPackage(std::string name, std::string package, std::string 
 	int ret;
 	MemMapping map;
 
+	mReloadTheme = false;
+	mStartPage = startpage;
+
 	// Open the XML file
 	LOGINFO("Loading package: %s (%s)\n", name.c_str(), package.c_str());
 	if (package.size() > 4 && package.substr(package.size() - 4) != ".zip")
@@ -1242,7 +1244,7 @@ int PageManager::LoadPackage(std::string name, std::string package, std::string 
 	pageSet = mCurrentSet;
 	mCurrentSet = new PageSet(xmlFile);
 
-	ret = mCurrentSet->Load(pZip);
+	ret = mCurrentSet->Load(pZip, xmlFile);
 	if (ret == 0)
 	{
 		mCurrentSet->SetPage(startpage);
@@ -1310,6 +1312,8 @@ int PageManager::ReloadPackage(std::string name, std::string package)
 {
 	std::map<std::string, PageSet*>::iterator iter;
 
+	mReloadTheme = false;
+
 	iter = mPageSets.find(name);
 	if (iter == mPageSets.end())
 		return -1;
@@ -1320,7 +1324,7 @@ int PageManager::ReloadPackage(std::string name, std::string package)
 	PageSet* set = (*iter).second;
 	mPageSets.erase(iter);
 
-	if (LoadPackage(name, package, "main") != 0)
+	if (LoadPackage(name, package, mStartPage) != 0)
 	{
 		LOGERR("Failed to load package '%s'.\n", package.c_str());
 		mPageSets.insert(std::pair<std::string, PageSet*>(name, set));
@@ -1346,6 +1350,38 @@ void PageManager::ReleasePackage(std::string name)
 	mPageSets.erase(iter);
 	delete set;
 	return;
+}
+
+int PageManager::RunReload() {
+	int ret_val = 0;
+	std::string theme_path;
+
+	if (!mReloadTheme)
+		return 0;
+
+	mReloadTheme = false;
+	theme_path = DataManager::GetSettingsStoragePath();
+	if (PartitionManager.Mount_By_Path(theme_path.c_str(), 1) < 0) {
+		LOGERR("Unable to mount %s during gui_reload_theme function.\n", theme_path.c_str());
+		ret_val = 1;
+	}
+
+	theme_path += "/TWRP/theme/ui.zip";
+	if (ret_val != 0 || ReloadPackage("TWRP", theme_path) != 0)
+	{
+		// Loading the custom theme failed - try loading the stock theme
+		LOGINFO("Attempting to reload stock theme...\n");
+		if (ReloadPackage("TWRP", TWRES "ui.xml"))
+		{
+			LOGERR("Failed to load base packages.\n");
+			ret_val = 1;
+		}
+	}
+	return ret_val;
+}
+
+void PageManager::RequestReload() {
+	mReloadTheme = true;
 }
 
 int PageManager::ChangePage(std::string name)
@@ -1401,6 +1437,9 @@ int PageManager::IsCurrentPage(Page* page)
 
 int PageManager::Render(void)
 {
+	if(blankTimer.isScreenOff())
+		return 0;
+
 	int res = (mCurrentSet ? mCurrentSet->Render() : -1);
 	if(mMouseCursor)
 		mMouseCursor->Render();
@@ -1450,6 +1489,9 @@ int PageManager::Update(void)
 {
 	if(blankTimer.isScreenOff())
 		return 0;
+
+	if (RunReload())
+		return -2;
 
 	int res = (mCurrentSet ? mCurrentSet->Update() : -1);
 

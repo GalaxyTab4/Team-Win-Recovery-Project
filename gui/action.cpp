@@ -587,7 +587,14 @@ int GUIAction::page(std::string arg)
 
 int GUIAction::reload(std::string arg __unused)
 {
-	return !TWFunc::reloadTheme();
+	PageManager::RequestReload();
+	// The actual reload is handled in pages.cpp in PageManager::RunReload()
+	// The reload will occur on the next Update or Render call and will
+	// be performed in the rendoer thread instead of the action thread
+	// to prevent crashing which could occur when we start deleting
+	// GUI resources in the action thread while we attempt to render
+	// with those same resources in another thread.
+	return 0;
 }
 
 int GUIAction::readBackup(std::string arg __unused)
