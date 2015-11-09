@@ -111,6 +111,7 @@ LOCAL_SHARED_LIBRARIES += libz libc libcutils libstdc++ libtar libblkid libminui
 LOCAL_SHARED_LIBRARIES += libcrecovery
 
 ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 23; echo $$?),0)
+
     LOCAL_SHARED_LIBRARIES += libstlport
 else
     LOCAL_SHARED_LIBRARIES += libc++
