@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <string>
 #include <dirent.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <linux/capability.h>
 #include <linux/xattr.h>
