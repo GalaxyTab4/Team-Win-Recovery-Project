@@ -351,6 +351,9 @@ else
 endif
 endif
 LOCAL_CFLAGS += -DPLATFORM_SDK_VERSION=$(PLATFORM_SDK_VERSION)
+ifneq ($(TARGET_RECOVERY_INITRC),)
+    TW_EXCLUDE_DEFAULT_USB_INIT := true
+endif
 
 LOCAL_ADDITIONAL_DEPENDENCIES := \
     dump_image \
@@ -421,6 +424,9 @@ ifeq ($(BOARD_USES_BML_OVER_MTD),true)
 endif
 ifeq ($(TW_INCLUDE_INJECTTWRP), true)
     LOCAL_ADDITIONAL_DEPENDENCIES += injecttwrp
+endif
+ifneq ($(TW_EXCLUDE_DEFAULT_USB_INIT), true)
+    LOCAL_ADDITIONAL_DEPENDENCIES += init.recovery.usb.rc
 endif
 # Allow devices to specify device-specific recovery dependencies
 ifneq ($(TARGET_RECOVERY_DEVICE_MODULES),)
@@ -558,7 +564,8 @@ include $(commands_recovery_local_path)/injecttwrp/Android.mk \
     $(commands_recovery_local_path)/dosfstools/Android.mk \
     $(commands_recovery_local_path)/phablet/Android.mk \
     $(commands_recovery_local_path)/simg2img/Android.mk \
-    $(commands_recovery_local_path)/cp_xattrs/Android.mk
+    $(commands_recovery_local_path)/cp_xattrs/Android.mk \
+    $(commands_recovery_local_path)/etc/Android.mk
 
 ifeq ($(TW_INCLUDE_CRYPTO), true)
     include $(commands_recovery_local_path)/crypto/lollipop/Android.mk
