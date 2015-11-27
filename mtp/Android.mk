@@ -35,7 +35,7 @@ LOCAL_SRC_FILES = \
     node.cpp
 LOCAL_SHARED_LIBRARIES += libz libc libusbhost libstdc++ libdl libcutils libutils libaosprecovery
 
-ifeq (,$(filter $(PLATFORM_SDK_VERSION), 23))
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 23; echo $$?),0)
     LOCAL_SHARED_LIBRARIES += libstlport
 else
     LOCAL_SHARED_LIBRARIES += libc++
