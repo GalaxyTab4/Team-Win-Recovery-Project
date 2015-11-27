@@ -81,7 +81,11 @@ ifneq ($(BOARD_SYSTEMIMAGE_PARTITION_SIZE),)
     LOCAL_CFLAGS += -DBOARD_SYSTEMIMAGE_PARTITION_SIZE=$(BOARD_SYSTEMIMAGE_PARTITION_SIZE)
 endif
 
-LOCAL_C_INCLUDES += bionic external/stlport/stlport
+LOCAL_C_INCLUDES += bionic system/core/libpixelflinger/include
+ifeq ($(shell test $(PLATFORM_SDK_VERSION) -lt 23; echo $$?),0)
+    LOCAL_C_INCLUDES += external/stlport/stlport
+endif
+
 LOCAL_CFLAGS += -DTWRES=\"$(TWRES_PATH)\"
 
 include $(BUILD_STATIC_LIBRARY)
