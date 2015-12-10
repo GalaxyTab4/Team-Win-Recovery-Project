@@ -165,9 +165,14 @@ ifneq ($(TW_EXCLUDE_ENCRYPTED_BACKUPS), true)
     RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/sbin/openaes
     RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libopenaes.so
 endif
-# MultiROM: always enable f2fs binaries
-#ifeq ($(TARGET_USERIMAGES_USE_F2FS), true)
-    ifneq (,$(filter $(PLATFORM_SDK_VERSION), 21 22))
+
+ifeq ($(TARGET_USERIMAGES_USE_F2FS), true)
+    ifeq ($(shell test $(CM_PLATFORM_SDK_VERSION) -ge 4; echo $$?),0)
+        RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/mkfs.f2fs
+        RELINK_SOURCE_FILES += $(TARGET_OUT_SHARED_LIBRARIES)/libf2fs.so
+    else ifneq (,$(filter $(PLATFORM_SDK_VERSION), 23))
+        RELINK_SOURCE_FILES += $(TARGET_RECOVERY_ROOT_OUT)/sbin/mkfs.f2fs
+    else ifneq (,$(filter $(PLATFORM_SDK_VERSION), 21 22))
         RELINK_SOURCE_FILES += $(TARGET_ROOT_OUT_SBIN)/mkfs.f2fs
     else
         RELINK_SOURCE_FILES += $(TARGET_OUT_EXECUTABLES)/mkfs.f2fs
@@ -464,4 +469,5 @@ ifneq ($(TW_EXCLUDE_SUPERSU), true)
 	LOCAL_MODULE_PATH := $(TARGET_RECOVERY_ROOT_OUT)/supersu
 	LOCAL_SRC_FILES := $(LOCAL_MODULE)
 	include $(BUILD_PREBUILT)
+endif
 endif
