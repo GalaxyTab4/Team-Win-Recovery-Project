@@ -384,8 +384,6 @@ LOCAL_ADDITIONAL_DEPENDENCIES += \
     gnutar \
     lz4 \
     ntfs-3g \
-    cp_xattrs \
-    ls_xattrs \
     fsck.fat \
     fatlabel \
     mkfs.fat \
