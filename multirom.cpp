@@ -175,9 +175,8 @@ bool MultiROM::setRomsPath(std::string loc)
 		LOGERR("Failed to mount location \"%s\"!\n", loc.c_str());
 		return false;
 	}
-
-	m_curr_roms_path = "/mnt/multirom-"TARGET_DEVICE"/";
-	mkdir("/mnt/multirom-"TARGET_DEVICE"/", 0777);
+	m_curr_roms_path = "/mnt/multirom-" TARGET_DEVICE"/";
+	mkdir("/mnt/multirom-" TARGET_DEVICE"/", 0777);
 	return true;
 }
 
@@ -941,14 +940,14 @@ bool MultiROM::flashZip(std::string rom, std::string file)
 	status = TWinstall_zip(file.c_str(), &wipe_cache);
 	DataManager::SetValue(TW_SIGNED_ZIP_VERIFY_VAR, verify_status);
 
-	if(restore_script && hacker.restoreState() && hacker.writeToFile("/tmp/"MR_UPDATE_SCRIPT_NAME))
+	if(restore_script && hacker.restoreState() && hacker.writeToFile("/tmp/" MR_UPDATE_SCRIPT_NAME))
 	{
 		gui_print("Restoring original updater-script\n");
 		if(system_args("cd /tmp && zip \"%s\" %s", file.c_str(), MR_UPDATE_SCRIPT_NAME) != 0)
 			LOGERR("Failed to restore original updater-script, THIS ZIP IS NOW UNUSEABLE FOR NON-MULTIROM FLASHING\n");
 	}
 
-	system("rm -r "MR_UPDATE_SCRIPT_PATH);
+	system("rm -r " MR_UPDATE_SCRIPT_PATH);
 	if(file == "/tmp/mr_update.zip")
 		system("rm /tmp/mr_update.zip");
 
@@ -1000,14 +999,14 @@ bool MultiROM::flashORSZip(std::string file, int *wipe_cache)
 	status = TWinstall_zip(file.c_str(), wipe_cache);
 	DataManager::SetValue(TW_SIGNED_ZIP_VERIFY_VAR, verify_status);
 
-	if(restore_script && hacker.restoreState() && hacker.writeToFile("/tmp/"MR_UPDATE_SCRIPT_NAME))
+	if(restore_script && hacker.restoreState() && hacker.writeToFile("/tmp/" MR_UPDATE_SCRIPT_NAME))
 	{
 		gui_print("Restoring original updater-script\n");
 		if(system_args("cd /tmp && zip \"%s\" %s", file.c_str(), MR_UPDATE_SCRIPT_NAME) != 0)
 			LOGERR("Failed to restore original updater-script, THIS ZIP IS NOW UNUSEABLE FOR NON-MULTIROM FLASHING\n");
 	}
 
-	system("rm -r "MR_UPDATE_SCRIPT_PATH);
+	system("rm -r " MR_UPDATE_SCRIPT_PATH);
 	if(file == "/tmp/mr_update.zip")
 		system("rm /tmp/mr_update.zip");
 
@@ -1084,7 +1083,7 @@ bool MultiROM::prepareZIP(std::string& file, EdifyHacker *hacker, bool& restore_
 	script_entry = mzFindZipEntry(&zip, MR_UPDATE_SCRIPT_NAME);
 	if(!script_entry)
 	{
-		gui_print("Failed to find entry "MR_UPDATE_SCRIPT_NAME" in ZIP file %s!\n", file.c_str());
+		gui_print("Failed to find entry " MR_UPDATE_SCRIPT_NAME" in ZIP file %s!\n", file.c_str());
 		goto exit;
 	}
 
@@ -1109,7 +1108,7 @@ bool MultiROM::prepareZIP(std::string& file, EdifyHacker *hacker, bool& restore_
 	hacker->saveState();
 	hacker->replaceOffendings();
 
-	if(!hacker->writeToFile("/tmp/"MR_UPDATE_SCRIPT_NAME))
+	if(!hacker->writeToFile("/tmp/" MR_UPDATE_SCRIPT_NAME))
 		goto exit;
 
 	hacker->writeToFile("/tmp/mrom_last_updater_script");
@@ -2179,7 +2178,8 @@ const base_folder& MultiROM::addBaseFolder(const std::string& name, int min, int
 const base_folder& MultiROM::addBaseFolder(const base_folder& b)
 {
 	LOGINFO("MROMInstaller: base folder: %s (min: %dMB def: %dMB)\n", b.name.c_str(), b.min_size, b.size);
-	return m_base_folders.insert(std::make_pair<std::string, base_folder>(b.name, b)).first->second;
+//	return m_base_folders.insert(std::make_pair<std::string, base_folder>(b.name, b)).first->second;
+	return addBaseFolder(b);
 }
 
 MultiROM::baseFolders& MultiROM::getBaseFolders()
@@ -2770,7 +2770,7 @@ void MultiROM::startSystemImageUpgrader()
 	DataManager::SetValue("tw_show_reboot", 0);
 	gui_startPage("action_page", 0, 1);
 }
-
+#ifdef FUCKER
 bool MultiROM::copyPartWithXAttrs(const std::string& src, const std::string& dst, const std::string& part, bool skipMedia)
 {
 	if(!skipMedia)
@@ -2975,7 +2975,7 @@ erase_incomplete:
 	system_args("rm -rf \"%s\"", dest_dir.c_str());
 	return false;
 }
-
+#endif
 std::string MultiROM::getRecoveryVersion()
 {
 	TWPartition *recovery = PartitionManager.Find_Partition_By_Path("/recovery");

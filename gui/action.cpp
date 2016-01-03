@@ -2527,6 +2527,11 @@ int GUIAction::multirom_swap_calc_space(std::string arg)
 
 int GUIAction::multirom_execute_swap(std::string arg)
 {
+	return 0;
+}
+
+#ifdef FUCKER
+{
 	operation_start("SwapROMs");
 
 	int res = 1;
@@ -2597,7 +2602,7 @@ int GUIAction::multirom_execute_swap(std::string arg)
 	operation_end(res);
 	return 0;
 }
-
+#endif
 int GUIAction::multirom_set_fw(std::string arg)
 {
 	operation_start("CopyFW");

@@ -48,7 +48,7 @@ std::string MROMInstaller::open(const std::string& file)
 	MemMapping map;
 	if (sysMapFile(file.c_str(), &map) != 0) {
 		LOGERR("Failed to sysMapFile '%s'\n", file.c_str());
-		return false;
+		return "";
 	}
 
 	if (mzOpenZipArchive(map.addr, map.length, &zip) != 0)
@@ -314,7 +314,7 @@ bool MROMInstaller::extractDir(const std::string& name, const std::string& dest)
 
 	// To create a consistent system image, never use the clock for timestamps.
     struct utimbuf timestamp = { 1217592000, 1217592000 };  // 8/1/2008 default
-	bool success = mzExtractRecursive(&zip, name.c_str(), dest.c_str(), MZ_EXTRACT_FILES_ONLY, &timestamp, NULL, NULL, NULL);
+	bool success = mzExtractRecursive(&zip, name.c_str(), dest.c_str(), &timestamp, NULL, NULL, NULL);
 
 	mzCloseZipArchive(&zip);
 	sysReleaseMap(&map);
